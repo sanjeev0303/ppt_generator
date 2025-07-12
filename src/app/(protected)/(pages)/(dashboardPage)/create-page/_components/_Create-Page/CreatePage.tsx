@@ -2,14 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  containerVariants,
-  CreatePageCard,
-  itemVariants,
+    containerVariants,
+    CreatePageCard
 } from "@/lib/constants";
+import { usePromptStore } from "@/store/usePromptStore";
 import { motion } from "motion/react";
 import RecentPrompts from "./RecentPrompts";
-import { usePromptStore } from "@/store/usePromptStore";
-import { useEffect } from "react";
 
 type Props = {
   onSelectionOption: (option: string) => void;
@@ -19,10 +17,18 @@ export const CreatePage = ({ onSelectionOption }: Props) => {
 
     const { prompts, setPage } = usePromptStore()
 
-    // useEffect(() => {
-    //     setPage("create")
-    // }, [])
-
+   const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      duration: 0.5,
+      stiffness: 100,
+    },
+  },
+};
 
   return (
     <motion.div

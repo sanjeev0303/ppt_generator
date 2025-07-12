@@ -1,7 +1,7 @@
 "use client"
 import type { OutlineCard } from "@/lib/type"
 import { motion, AnimatePresence } from "motion/react"
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Card from "./Card"
 import AddCardButton from "./AddCardButton"
 
@@ -38,6 +38,16 @@ const CardList = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragOffsetY = useRef<number>(0)
+  const dragImageRef = useRef<HTMLElement | null>(null)
+
+   // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
+        document.body.removeChild(dragImageRef.current)
+      }
+    }
+  }, [])
 
   const onDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
@@ -173,6 +183,7 @@ const CardList = ({
     }
   }
 
+
   const onDragStart = (e: React.DragEvent, card: OutlineCard) => {
     setDraggedItem(card)
     setIsDragging(true)
@@ -180,6 +191,11 @@ const CardList = ({
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     dragOffsetY.current = e.clientY - rect.top
+
+    // Clean up any existing drag image
+    if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
+      document.body.removeChild(dragImageRef.current)
+    }
 
     // Create drag image
     const draggedEl = e.currentTarget.cloneNode(true) as HTMLElement
@@ -189,11 +205,13 @@ const CardList = ({
     draggedEl.style.width = `${(e.currentTarget as HTMLElement).offsetWidth}px`
     draggedEl.style.transform = "rotate(2deg)"
     document.body.appendChild(draggedEl)
+    dragImageRef.current = draggedEl
     e.dataTransfer.setDragImage(draggedEl, 0, dragOffsetY.current)
 
     setTimeout(() => {
-      if (document.body.contains(draggedEl)) {
-        document.body.removeChild(draggedEl)
+       if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
+        document.body.removeChild(dragImageRef.current)
+        dragImageRef.current = null
       }
     }, 0)
   }
@@ -256,7 +274,7 @@ const CardList = ({
     >
       <AnimatePresence>
         {outlines.map((card, index) => (
-          <div key={`card-container-${card.id}`}>
+          <div key={`card-container-${card.id}-${index}`}>
             <Card
               key={`card-${card.id}`}
               onDragOver={(e) => onDragOver(e, index)}

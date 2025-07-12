@@ -22,7 +22,7 @@ const CreatePage = async () => {
           </div>
         }
       >
-        <RenderPage key={`render-page-${Date.now()}`} />
+        <RenderPage/>
       </Suspense>
     </main>
   );
