@@ -6,7 +6,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { v4 } from "uuid";
 import { onAuthenticateUser } from "./user";
 import { existingLayouts } from "./data/existing-layout";
 
