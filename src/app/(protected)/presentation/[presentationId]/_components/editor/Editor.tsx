@@ -24,17 +24,12 @@ const Editor = ({ isEditable }: Props) => {
     project,
   } = useSlideStore();
 
-  console.log("🎬 Editor component rendered");
-  console.log("📊 Current slides count:", slides?.length || 0);
-
   const orderedSlides = getOrderSlides();
-  console.log("📋 Ordered slides count:", orderedSlides?.length || 0);
 
   const slideRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const [loading, setLoading] = useState(true);
 
   const moveSlide = (dragIndex: number, hoverIndex: number) => {
-    console.log(`🔄 Moving slide from ${dragIndex} to ${hoverIndex}`);
     if (isEditable) {
       reorderSlides(dragIndex, hoverIndex);
     }
@@ -49,16 +44,12 @@ const Editor = ({ isEditable }: Props) => {
     },
     dropIndex: number
   ) => {
-    console.log("📥 Drop event:", { item, dropIndex });
 
     if (!isEditable) {
-      console.log("⚠️ Editor not editable, ignoring drop");
       return;
     }
 
     if (item.type === "layout") {
-      console.log("➕ Adding new slide from layout");
-
       // Fix: Ensure the slide object matches the Slide interface
       const newSlide = {
         id: v4(),
@@ -78,31 +69,25 @@ const Editor = ({ isEditable }: Props) => {
         type: item.component.type || item.layoutType,
       };
 
-      console.log("🆕 New slide object:", newSlide);
-
       addSlideAtIndex(newSlide, dropIndex);
     } else if (item.type === "SLIDE" && item.index !== undefined) {
-      console.log("🔄 Reordering existing slide");
       moveSlide(item.index, dropIndex);
     }
   };
 
   const handleDelete = (id: string) => {
-    console.log("🗑️ Deleting slide with ID:", id);
     if (isEditable) {
       removeSlide(id);
     }
   };
 
   useEffect(() => {
-    console.log("🎯 Current slide changed:", currentSlide);
 
     if (
       typeof currentSlide === "number" &&
       currentSlide >= 0 &&
       slideRefs.current[currentSlide]
     ) {
-      console.log("📍 Scrolling to slide:", currentSlide);
       slideRefs.current[currentSlide]?.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -110,18 +95,9 @@ const Editor = ({ isEditable }: Props) => {
     }
   }, [currentSlide]);
 
-  // Log when slides change
-  useEffect(() => {
-    console.log("📊 Slides updated in Editor:", {
-      totalSlides: slides?.length || 0,
-      orderedSlidesCount: orderedSlides?.length || 0,
-      projectId: project?.id || "No project",
-    });
-  }, [slides, orderedSlides, project]);
-
   useEffect(() => {
    // Set loading to false once slides are available
-   if (slides && slides.length >= 0) {
+   if (slides && slides.length > 0) {
      setLoading(false);
    }
  }, [slides]);

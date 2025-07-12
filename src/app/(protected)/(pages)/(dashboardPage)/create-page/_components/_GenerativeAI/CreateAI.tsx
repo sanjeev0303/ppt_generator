@@ -1,29 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
-import React, { useEffect, useState } from "react";
-import { containerVariants, itemVariants } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader2, RotateCcw } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useCreativeAIStore } from "@/store/useCreativeAiStore";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import CardList from "../_Common/CardList";
-import { usePromptStore } from "@/store/usePromptStore";
-import RecentPrompts from "../_Create-Page/RecentPrompts";
-import { toast } from "sonner";
 import { generateCreativePrompt } from "@/actions/chatgpt";
-import { OutlineCard } from "@/lib/type";
-import { v4 } from "uuid";
 import { createProject } from "@/actions/project";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { containerVariants } from "@/lib/constants";
+import { OutlineCard } from "@/lib/type";
+import { useCreativeAIStore } from "@/store/useCreativeAiStore";
+import { usePromptStore } from "@/store/usePromptStore";
 import { useSlideStore } from "@/store/useSlideStore";
+import { ChevronLeft, Loader2, RotateCcw } from "lucide-react";
+import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { v4 } from "uuid";
+import CardList from "../_Common/CardList";
+import RecentPrompts from "../_Create-Page/RecentPrompts";
 
 type Props = {
   onBack: () => void;
@@ -155,7 +155,7 @@ const CreateAI = ({ onBack }: Props) => {
     }
   };
 
- const itemVariants = {
+const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,

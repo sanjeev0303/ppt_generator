@@ -151,6 +151,7 @@ const CardList = ({
   }
 
   const onCardDelete = (id: string) => {
+    // Create a new array without the deleted card
     const filteredCards = outlines.filter((card) => card.id !== id)
 
     // Update order property for remaining cards - this ensures proper indexing after deletion
@@ -159,7 +160,8 @@ const CardList = ({
       order: index + 1,
     }))
 
-    addMultipleOutlines(reorderedCards)
+    // Important: Replace the entire array in state, not append to it
+    addMultipleOutlines([...reorderedCards])
 
     // Clear any editing state if the deleted card was being edited
     if (editingCard === id) {
@@ -254,7 +256,7 @@ const CardList = ({
     >
       <AnimatePresence>
         {outlines.map((card, index) => (
-          <React.Fragment key={`card-fragment-${card.id}`}>
+          <div key={`card-container-${card.id}`}>
             <Card
               key={`card-${card.id}`}
               onDragOver={(e) => onDragOver(e, index)}
@@ -286,11 +288,11 @@ const CardList = ({
             {/* Only show AddCardButton when not dragging to avoid interference */}
             {!isDragging && (
               <AddCardButton
-                key={`add-button-${card.id}-${index}`}
+                key={`add-button-${index}`}
                 onAddCard={() => onAddCard(index)}
               />
             )}
-          </React.Fragment>
+          </div>
         ))}
       </AnimatePresence>
 

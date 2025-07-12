@@ -39,6 +39,19 @@ const RecentPrompts = (props: Props) => {
     }
   }
 
+  const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      duration: 0.5,
+      stiffness: 100,
+    },
+  },
+};
+
   return (
     <motion.div variants={containerVariants} className="space-y-4 !mt-20">
       <motion.h2

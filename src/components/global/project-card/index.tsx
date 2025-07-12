@@ -58,6 +58,7 @@ const ProjectCard = ({
             toast.error("Oops!", {
                 description: res.error || "Something went wrong."
             })
+            setLoading(false)
             return
         }
 
@@ -94,6 +95,7 @@ const ProjectCard = ({
             toast.error("Oops!", {
                 description: res.error || "Failed to delete project."
             })
+            setLoading(false)
             return
         }
 
