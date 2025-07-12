@@ -1,6 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { User } from "@prisma/client";
+import type { User } from "@/lib/prisma-types";
 import React from "react";
 import SearchBar from "./upper-info-search-bar";
 import { ThemeSwitcher } from "../mode-toggle";

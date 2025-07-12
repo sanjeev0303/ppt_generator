@@ -8,7 +8,7 @@ import {
   SidebarHeader,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Project, User } from "@prisma/client";
+import type { Project, User } from "@/lib/prisma-types";
 import {
   HomeIcon,
   LayoutTemplateIcon,

@@ -1,4 +1,4 @@
-import { Project } from "@prisma/client";
+import type { Project } from "@/lib/prisma-types";
 import React from "react";
 import { motion } from "motion/react";
 import { containerVariants } from "@/lib/constants";

@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { SignedIn, UserButton, useUser } from "@clerk/nextjs";
-import { User } from "@prisma/client";
+import type { User } from "@/lib/prisma-types";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 

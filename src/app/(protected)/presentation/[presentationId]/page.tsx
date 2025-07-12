@@ -8,22 +8,15 @@ import { useTheme } from "next-themes";
 import { redirect, useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DndProvider } from "react-dnd"
-import { HTML5Backend } from "react-dnd-html5-backend"
-import Navbar from "./_components/Navbar/Navbar";
-import LayoutPreview from "./_components/editor-sidebar/left-sidebar/LayoutPreview";
-import Editor from "./_components/editor/Editor";
+import { EnhancedEditor } from "@/components/Editor";
 
 const PresentationId = () => {
-    // WIP: create the presentation view
     const params = useParams();
     const { setTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
-    const { setSlides, setProject, currentTheme,  } =
-      useSlideStore();
+    const { setSlides, setProject, currentTheme, setCurrentTheme } = useSlideStore();
 
   useEffect(() => {
-    // iffe function
     (async () => {
         try {
             const res = await getProjectById(params.PresentationId as string)
@@ -37,8 +30,8 @@ const PresentationId = () => {
             const findTheme = themes.find((theme) => theme.name === res.data.themeName)
 
             setTheme(findTheme?.type === "dark"? "dark" : "light")
-            if (typeof useSlideStore.getState().setCurrentTheme === "function") {
-                useSlideStore.getState().setCurrentTheme(findTheme || themes[0]);
+            if (setCurrentTheme) {
+                setCurrentTheme(findTheme || themes[0]);
             }
             setProject(res.data)
             setSlides(JSON.parse(JSON.stringify(res.data.slides)))
@@ -50,7 +43,7 @@ const PresentationId = () => {
             setIsLoading(false)
         }
     })()
-  }, []);
+  }, [params.PresentationId, setTheme, setProject, setSlides, setCurrentTheme]);
 
   if (isLoading) {
     return(
@@ -61,24 +54,12 @@ const PresentationId = () => {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-        <div className="min-h-screen flex flex-col">
-            <Navbar presentationId={params.PresentationId as string} />
-
-            <div className="flex-1 flex overflow-hidden pt-16"
-            style={{
-               color: currentTheme?.accentColor,
-               fontFamily: currentTheme?.fontFamily,
-                backgroundColor: currentTheme?.backgroundColor,
-            }}
-            >
-               <LayoutPreview />
-               <div className="flex-1 ml-64 pr-16">
-                <Editor isEditable={true} />
-               </div>
-            </div>
-        </div>
-    </DndProvider>
+    <div className="h-screen">
+      <EnhancedEditor 
+        presentationId={params.PresentationId as string}
+        isEditable={true}
+      />
+    </div>
   )
 };
 

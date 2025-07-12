@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSlideStore } from "@/store/useSlideStore";
-import { Project } from "@prisma/client";
+import type { Project } from "@/lib/prisma-types";
 import { JsonValue } from "@prisma/client/runtime/library";
 import { useRouter } from "next/navigation";
 import React from "react";
