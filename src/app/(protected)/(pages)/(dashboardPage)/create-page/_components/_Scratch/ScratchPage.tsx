@@ -66,7 +66,7 @@ const ScratchPage = ({ onBack }: Props) => {
 
     const res = await createProject(outlines?.[0]?.title, outlines)
 
-    if (res.status === 200) {
+    if (res.status !== 200) {
         toast.error("Error",{
             description: res.error || "Failed to create project",
         })
@@ -87,6 +87,19 @@ const ScratchPage = ({ onBack }: Props) => {
     }
 
   };
+
+  const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      duration: 0.5,
+      stiffness: 100,
+    },
+  },
+};
 
   return (
     <motion.div

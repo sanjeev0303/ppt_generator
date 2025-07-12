@@ -38,7 +38,7 @@ export const ContentRenderer: React.FC<Props> = React.memo(
 
     const commonProps = {
       placeholder: content.placeholder,
-      value: content.content as string,
+      value: typeof content.content === 'string' ? content.content : '',
       onChange: handleChange,
       isPreview: isPreview,
     };
@@ -96,7 +96,7 @@ export const ContentRenderer: React.FC<Props> = React.memo(
               {content.content.length > 0 ? (
                 (content.content as ContentItem[]).map(
                   (subItem: ContentItem, subIndex: number) => (
-                    <React.Fragment key={subItem.id || `item=${subItem}`}>
+                    <React.Fragment key={subItem.id || `item-${subIndex}`}>
                       {!isPreview &&
                         !subItem.restrictToDrop &&
                         subIndex === 0 &&

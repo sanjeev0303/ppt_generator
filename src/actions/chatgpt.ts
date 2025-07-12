@@ -1,94 +1,109 @@
-"use server"
+"use server";
 
-import { client } from "@/lib/prisma"
-import type { ContentItem, ContentType, Slide } from "@/lib/type"
-import { currentUser } from "@clerk/nextjs/server"
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
-import { GoogleGenerativeAI } from "@google/generative-ai"
-import { v4 } from "uuid"
-import { onAuthenticateUser } from "./user"
+import { client } from "@/lib/prisma";
+import type { ContentItem, ContentType, Slide } from "@/lib/type";
+import { currentUser } from "@clerk/nextjs/server";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { v4 } from "uuid";
+import { onAuthenticateUser } from "./user";
+import { existingLayouts } from "./data/existing-layout";
 
 // Initialize Google GenAI client
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
-
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  throw new Error(
+    "GOOGLE_GENERATIVE_AI_API_KEY environment variable is required"
+  );
+}
 // AI SDK Google model for primary operations
-const geminiProModel = google("gemini-1.5-pro")
+const geminiProModel = google("gemini-1.5-pro");
 
 // Google GenAI model for fallback operations
-const geminiFlashModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
+const geminiFlashModel = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-exp",
+});
 
 // Enhanced fallback function with both AI SDK and Google GenAI
 async function generateWithFallback(
   systemPrompt: string,
   userPrompt: string,
-  maxTokens = 4000,
-): Promise<{ success: true; text: string; modelUsed: string } | { success: false; error: string }> {
-  const errors: string[] = []
+  maxTokens = 4000
+): Promise<
+  | { success: true; text: string; modelUsed: string }
+  | { success: false; error: string }
+> {
+  const errors: string[] = [];
 
   // First try: AI SDK Google Gemini 1.5 Pro
   try {
-    console.log("🟡 Attempting generation with AI SDK Gemini 1.5 Pro...")
-    const startTime = Date.now()
+    console.log("🟡 Attempting generation with AI SDK Gemini 1.5 Pro...");
+    const startTime = Date.now();
 
     const result = await generateText({
       model: geminiProModel,
       system: systemPrompt,
       prompt: userPrompt,
       maxTokens,
-    })
+    });
 
-    const duration = Date.now() - startTime
+    const duration = Date.now() - startTime;
 
     if (result.text && result.text.trim()) {
-      console.log(`🟢 Success with AI SDK Gemini 1.5 Pro (${duration}ms)`)
+      console.log(`🟢 Success with AI SDK Gemini 1.5 Pro (${duration}ms)`);
       return {
         success: true,
         text: result.text,
         modelUsed: "AI SDK Gemini 1.5 Pro",
-      }
+      };
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.log(`🔴 AI SDK Gemini 1.5 Pro failed: ${errorMessage}`)
-    errors.push(`AI SDK Gemini 1.5 Pro: ${errorMessage}`)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`🔴 AI SDK Gemini 1.5 Pro failed: ${errorMessage}`);
+    errors.push(`AI SDK Gemini 1.5 Pro: ${errorMessage}`);
   }
 
   // Second try: Google GenAI Gemini 2.0 Flash
   try {
-    console.log("🟡 Attempting generation with Google GenAI Gemini 2.0 Flash...")
-    const startTime = Date.now()
+    console.log(
+      "🟡 Attempting generation with Google GenAI Gemini 2.0 Flash..."
+    );
+    const startTime = Date.now();
 
-    const prompt = `${systemPrompt}\n\nUser: ${userPrompt}`
-    const result = await geminiFlashModel.generateContent(prompt)
-    const response = await result.response
-    const text = response.text()
+    const prompt = `${systemPrompt}\n\nUser: ${userPrompt}`;
+    const result = await geminiFlashModel.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-    const duration = Date.now() - startTime
+    const duration = Date.now() - startTime;
 
     if (text && text.trim()) {
-      console.log(`🟢 Success with Google GenAI Gemini 2.0 Flash (${duration}ms)`)
+      console.log(
+        `🟢 Success with Google GenAI Gemini 2.0 Flash (${duration}ms)`
+      );
       return {
         success: true,
         text: text,
         modelUsed: "Google GenAI Gemini 2.0 Flash",
-      }
+      };
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.log(`🔴 Google GenAI Gemini 2.0 Flash failed: ${errorMessage}`)
-    errors.push(`Google GenAI Gemini 2.0 Flash: ${errorMessage}`)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`🔴 Google GenAI Gemini 2.0 Flash failed: ${errorMessage}`);
+    errors.push(`Google GenAI Gemini 2.0 Flash: ${errorMessage}`);
   }
 
-  console.log("🔴 All Gemini models failed")
+  console.log("🔴 All Gemini models failed");
   return {
     success: false,
     error: `All Gemini models failed. Errors: ${errors.join("; ")}`,
-  }
+  };
 }
 
 export const generateCreativePrompt = async (userPrompt: string) => {
-  const systemPrompt = "You are a helpful AI that generates outlines for presentations."
+  const systemPrompt =
+    "You are a helpful AI that generates outlines for presentations.";
 
   const finalPrompt = `Create a coherent and relevant outline for the following prompt: ${userPrompt}.
 
@@ -105,480 +120,57 @@ export const generateCreativePrompt = async (userPrompt: string) => {
     ]
   }
 
-  Ensure that the JSON is valid and properly formatted. Do not include any other text or explanations outside the JSON.`
+  Ensure that the JSON is valid and properly formatted. Do not include any other text or explanations outside the JSON.`;
 
   try {
-    const result = await generateWithFallback(systemPrompt, finalPrompt)
+    const result = await generateWithFallback(systemPrompt, finalPrompt);
 
     if (!result.success) {
-      return { status: 500, error: result.error }
+      return { status: 500, error: result.error };
     }
 
-    const { text, modelUsed } = result
+    const { text, modelUsed } = result;
 
     if (text) {
       // Remove code block markers if present
-      let cleanedText = text.trim()
+      let cleanedText = text.trim();
       if (cleanedText.startsWith("```json")) {
-        cleanedText = cleanedText.replace(/^```json\s*/, "").replace(/\s*```$/, "")
+        cleanedText = cleanedText
+          .replace(/^```json\s*/, "")
+          .replace(/\s*```$/, "");
       } else if (cleanedText.startsWith("```")) {
-        cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "")
+        cleanedText = cleanedText.replace(/^```\s*/, "").replace(/\s*```$/, "");
       }
 
       try {
-        const jsonResponse = JSON.parse(cleanedText)
-        console.log(`🟢 Outline generated successfully using ${modelUsed}`)
-        return { status: 200, data: jsonResponse, modelUsed }
+        const jsonResponse = JSON.parse(cleanedText);
+        console.log(`🟢 Outline generated successfully using ${modelUsed}`);
+        return { status: 200, data: jsonResponse, modelUsed };
       } catch (error) {
-        return { status: 500, error: "Invalid JSON format received from AI" }
+        return { status: 500, error: "Invalid JSON format received from AI" };
       }
     }
 
-    return { status: 400, error: "No content generated" }
+    return { status: 400, error: "No content generated" };
   } catch (error) {
-    console.log("🔴 Error", error)
-    return { status: 500, error: "Internal Server Error" }
+    console.log("🔴 Error", error);
+    return { status: 500, error: "Internal Server Error" };
   }
-}
-
-const existingLayouts: Slide[] = [
-  {
-    id: v4(),
-    slideName: "Blank Card",
-    type: "blank-card",
-    slideOrder: 1,
-    className: "p-8 mx-auto flex justify-center items-center min-h-[200px]",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "title" as ContentType,
-          name: "Title",
-          content: "",
-          placeholder: "Untitled Card",
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Accent Left",
-    type: "accentLeft",
-    slideOrder: 2,
-    className: "min-h-[300px]",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      restrictToDrop: true,
-      content: [
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Resizable column",
-          restrictToDrop: true,
-          content: [
-            {
-              id: v4(),
-              type: "image" as ContentType,
-              name: "Image",
-              content:
-                "https://plus.unsplash.com/premium_photo-1729004379397-ece899804701?q=80&w=2767&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-              alt: "Professional presentation accent image",
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Image and Text",
-    type: "imageAndText",
-    slideOrder: 3,
-    className: "min-h-[200px] p-8 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Image and text",
-          className: "border",
-          content: [
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "image" as ContentType,
-                  name: "Image",
-                  className: "p-3",
-                  content:
-                    "https://plus.unsplash.com/premium_photo-1729004379397-ece899804701?q=80&w=2767&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  alt: "Professional business presentation image",
-                },
-              ],
-            },
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "heading1" as ContentType,
-                  name: "Heading1",
-                  content: "",
-                  placeholder: "Heading1",
-                },
-                {
-                  id: v4(),
-                  type: "paragraph" as ContentType,
-                  name: "Paragraph",
-                  content: "",
-                  placeholder: "Start typing...",
-                },
-              ],
-              className: "w-full h-full p-8 flex items-center justify-center",
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Text and Image",
-    type: "textAndImage",
-    slideOrder: 4,
-    className: "min-h-[200px] p-8 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Text and image",
-          className: "border",
-          content: [
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "heading1" as ContentType,
-                  name: "Heading1",
-                  content: "",
-                  placeholder: "Heading1",
-                },
-                {
-                  id: v4(),
-                  type: "paragraph" as ContentType,
-                  name: "Paragraph",
-                  content: "",
-                  placeholder: "Start typing...",
-                },
-              ],
-              className: "w-full h-full p-8 flex justify-center items-center",
-            },
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "image" as ContentType,
-                  name: "Image",
-                  className: "p-3",
-                  content:
-                    "https://plus.unsplash.com/premium_photo-1729004379397-ece899804701?q=80&w=2767&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  alt: "Professional presentation visual content",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Two Columns",
-    type: "twoColumns",
-    slideOrder: 5,
-    className: "p-4 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "title" as ContentType,
-          name: "Title",
-          content: "",
-          placeholder: "Untitled Card",
-        },
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Two columns layout",
-          className: "border",
-          content: [
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-          ],
-        },
-        {
-          id: v4(),
-          type: "column" as ContentType,
-          name: "Column",
-          content: [
-            {
-              id: v4(),
-              type: "heading3" as ContentType,
-              name: "Heading3",
-              content: "",
-              placeholder: "Heading 3",
-            },
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Two Columns with Headings",
-    type: "twoColumnsWithHeadings",
-    slideOrder: 6,
-    className: "p-4 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "title" as ContentType,
-          name: "Title",
-          content: "",
-          placeholder: "Untitled Card",
-        },
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Two columns with headings",
-          className: "border",
-          content: [
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "heading3" as ContentType,
-                  name: "Heading3",
-                  content: "",
-                  placeholder: "Heading 3",
-                },
-                {
-                  id: v4(),
-                  type: "paragraph" as ContentType,
-                  name: "Paragraph",
-                  content: "",
-                  placeholder: "Start typing...",
-                },
-              ],
-            },
-            {
-              id: v4(),
-              type: "column" as ContentType,
-              name: "Column",
-              content: [
-                {
-                  id: v4(),
-                  type: "heading3" as ContentType,
-                  name: "Heading3",
-                  content: "",
-                  placeholder: "Heading 3",
-                },
-                {
-                  id: v4(),
-                  type: "paragraph" as ContentType,
-                  name: "Paragraph",
-                  content: "",
-                  placeholder: "Start typing...",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Three Columns",
-    type: "threeColumn",
-    slideOrder: 7,
-    className: "p-4 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "title" as ContentType,
-          name: "Title",
-          content: "",
-          placeholder: "Untitled Card",
-        },
-        {
-          id: v4(),
-          type: "resizable-column" as ContentType,
-          name: "Three columns layout",
-          className: "border",
-          content: [
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-            {
-              id: v4(),
-              type: "paragraph" as ContentType,
-              name: "Paragraph",
-              content: "",
-              placeholder: "Start typing...",
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Title with Bullet List",
-    type: "titleWithBulletList",
-    slideOrder: 8,
-    className: "p-4 mx-auto flex justify-center items-center",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "title" as ContentType,
-          name: "Title",
-          content: "",
-          placeholder: "Presentation Title",
-        },
-        {
-          id: v4(),
-          type: "bulletedList" as ContentType,
-          name: "Bulleted List",
-          content: ["", "", ""],
-          placeholder: "List item...",
-        },
-      ],
-    },
-  },
-
-  {
-    id: v4(),
-    slideName: "Quote Slide",
-    type: "quoteSlide",
-    slideOrder: 9,
-    className: "p-8 mx-auto flex justify-center items-center min-h-[300px]",
-    content: {
-      id: v4(),
-      type: "column" as ContentType,
-      name: "Column",
-      content: [
-        {
-          id: v4(),
-          type: "blockquote" as ContentType,
-          name: "Quote",
-          content: "",
-          placeholder: "Enter your quote here...",
-        },
-        {
-          id: v4(),
-          type: "paragraph" as ContentType,
-          name: "Attribution",
-          content: "",
-          placeholder: "- Author Name",
-          className: "text-right mt-4",
-        },
-      ],
-    },
-  },
-]
+};
 
 const findImageComponents = (layout: ContentItem): ContentItem[] => {
-  const images: ContentItem[] = []
+  const images: ContentItem[] = [];
   if (layout.type === "image") {
-    images.push(layout)
+    images.push(layout);
   }
 
   if (Array.isArray(layout.content)) {
     layout.content.forEach((child) => {
-      images.push(...findImageComponents(child as ContentItem))
-    })
+      images.push(...findImageComponents(child as ContentItem));
+    });
   }
-  return images
-}
+  return images;
+};
 
 const generateImageUrl = async (prompt: string): Promise<string> => {
   try {
@@ -595,43 +187,45 @@ const generateImageUrl = async (prompt: string): Promise<string> => {
     - Focus on accurately depicting the concept described, including specific objects, environment, mood and context. Maintain relevance to the description provided.
 
     Example Use Cases: Business presentations, educational slides, professional designs.
-    `
+    `;
 
     // Try to generate image description with fallback models
     const result = await generateWithFallback(
       "You are an expert at creating detailed image descriptions for professional presentations.",
       `Create a detailed description for generating an image: ${improvedPrompt}`,
-      500,
-    )
+      500
+    );
 
     if (!result.success) {
-      console.error("Failed to generate image description:", result.error)
-      return "https://via.placeholder.com/1024x1024?text=Placeholder+Image"
+      console.error("Failed to generate image description:", result.error);
+      return "https://via.placeholder.com/1024x1024?text=Placeholder+Image";
     }
 
-    console.log(`🟢 Image description generated using ${result.modelUsed}`)
+    console.log(`🟢 Image description generated using ${result.modelUsed}`);
 
     // For now, return a placeholder. In a real implementation, you'd use an image generation service
-    return "https://via.placeholder.com/1024x1024?text=Generated+Image"
+    return "https://via.placeholder.com/1024x1024?text=Generated+Image";
   } catch (error) {
-    console.error("Failed to generate image: ", error)
-    return "https://via.placeholder.com/1024x1024?text=Placeholder+Image"
+    console.error("Failed to generate image: ", error);
+    return "https://via.placeholder.com/1024x1024?text=Placeholder+Image";
   }
-}
+};
 
 const replaceImagePlaceholders = async (layout: Slide) => {
-  const imageComponents = findImageComponents(layout.content)
-  console.log("Found image components: ", imageComponents.length)
+  const imageComponents = findImageComponents(layout.content);
+  console.log("Found image components: ", imageComponents.length);
 
-  for (const component of imageComponents) {
-    console.log("🟢 Generating image for component: ", component.alt)
-    component.content = await generateImageUrl(component.alt || "Placeholder Image")
-  }
+  await Promise.all(
+    imageComponents.map(async (component) => {
+      console.log("🟢 Generating image for component: ", component.alt)
+      component.content = await generateImageUrl(component.alt || "Placeholder Image")
+    })
+  )
 }
 
 export const generateLayoutsJson = async (outlines: string[]) => {
   const systemPrompt =
-    "You are a highly creative AI that generates JSON-based layouts for presentations. Always return valid JSON format without any additional text or explanations."
+    "You are a highly creative AI that generates JSON-based layouts for presentations. Always return valid JSON format without any additional text or explanations.";
 
   const prompt = `
  You are a highly creative AI that generates JSON-based layouts for presentations. I will provide you with an array of outlines, and for each outline, you must generate a unique and creative layout. Use the existing layouts as examples for structure and design, and generate unique designs based on the provided outline.
@@ -661,71 +255,64 @@ export const generateLayoutsJson = async (outlines: string[]) => {
  - Avoid using terms like "image of" or "picture of," and instead focus directly on the content and meaning.
 
  Output the layouts in JSON format. Ensure there are no duplicate layouts across the array.
- `
+ `;
 
   try {
-    console.log("🟢 Generating the layouts with Gemini models...")
+    console.log("🟢 Generating the layouts with Gemini models...");
 
-    const result = await generateWithFallback(systemPrompt, prompt, 6000)
+    const result = await generateWithFallback(systemPrompt, prompt, 6000);
 
     if (!result.success) {
-      return { status: 500, error: result.error }
+      return { status: 500, error: result.error };
     }
 
-    const { text, modelUsed } = result
+    const { text, modelUsed } = result;
 
     if (!text) {
-      return { status: 400, error: "No content generated" }
+      return { status: 400, error: "No content generated" };
     }
 
-    let jsonResponse
+    let jsonResponse;
     try {
-      const cleanedText = text.replace(/```json|```/g, "").trim()
-      jsonResponse = JSON.parse(cleanedText)
+      const cleanedText = text.replace(/```json|```/g, "").trim();
+      jsonResponse = JSON.parse(cleanedText);
 
       // Process images for each layout
-      await Promise.all(jsonResponse.map(replaceImagePlaceholders))
+      await Promise.all(jsonResponse.map(replaceImagePlaceholders));
 
-      console.log(`🟢 Layouts generated successfully using ${modelUsed}`)
+      console.log(`🟢 Layouts generated successfully using ${modelUsed}`);
       return {
         status: 200,
         data: jsonResponse,
         modelUsed,
-      }
+      };
     } catch (error) {
-      console.log("🔴 JSON Parse Error: ", error)
-      throw new Error("Invalid JSON format received from AI")
+      console.log("🔴 JSON Parse Error: ", error);
+      throw new Error("Invalid JSON format received from AI");
     }
   } catch (error) {
-    console.error("🔴 Error: ", error)
-    return { status: 500, error: "Internal server error" }
+    console.error("🔴 Error: ", error);
+    return { status: 500, error: "Internal server error" };
   }
-}
+};
 
 export const generateLayouts = async (projectId: string, theme: string) => {
   try {
     if (!projectId) {
-      return { status: 400, error: "Project ID is required" }
+      return { status: 400, error: "Project ID is required" };
     }
 
     console.log("🔍 Generating layouts for project ID:", projectId);
 
-
-    const user = await onAuthenticateUser()
+    const user = await onAuthenticateUser();
 
     if (!user) {
-      return { status: 403, error: "User not authenticated" }
+      return { status: 403, error: "User not authenticated" };
     }
-
-    console.log("🔍 Current user:", user);
-
 
     const userExist = await client.user.findUnique({
       where: { id: user.user?.id },
-    })
-
-    console.log("🔍 User found:", userExist);
-
+    });
 
     if (!userExist || !userExist.subscription) {
       return {
@@ -733,31 +320,31 @@ export const generateLayouts = async (projectId: string, theme: string) => {
         error: !userExist?.subscription
           ? "User does not have an active subscription"
           : "User not found in the database",
-      }
+      };
     }
 
     const project = await client.project.findUnique({
       where: { id: projectId, isDeleted: false },
-    })
+    });
 
     if (!project) {
       return {
         status: 404,
         error: "Project not found",
-      }
+      };
     }
 
     if (!project.outlines || project.outlines.length === 0) {
       return {
         status: 400,
         error: "Project does not have any outlines",
-      }
+      };
     }
 
-    const layouts = await generateLayoutsJson(project.outlines)
+    const layouts = await generateLayoutsJson(project.outlines);
 
     if (layouts.status !== 200) {
-      return layouts
+      return layouts;
     }
 
     await client.project.update({
@@ -766,48 +353,54 @@ export const generateLayouts = async (projectId: string, theme: string) => {
         slides: layouts.data,
         themeName: theme,
       },
-    })
+    });
 
     return {
       status: 200,
       data: layouts.data,
       message: "Layouts generated successfully",
-    }
+    };
   } catch (error) {
-    console.log("🔴 Error", error)
-    return { status: 500, error: "Internal Server Error" }
+    console.log("🔴 Error", error);
+    return { status: 500, error: "Internal Server Error" };
   }
-}
+};
 
 // Utility functions for monitoring and testing
 export const checkGeminiAvailability = async () => {
   const models = [
-    { name: "AI SDK Gemini 1.5 Pro", available: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY },
-    { name: "Google GenAI Gemini 2.0 Flash", available: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY },
-  ]
+    {
+      name: "AI SDK Gemini 1.5 Pro",
+      available: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    },
+    {
+      name: "Google GenAI Gemini 2.0 Flash",
+      available: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    },
+  ];
 
-  console.log("🔍 Available Gemini Models:", models)
-  return models
-}
+  console.log("🔍 Available Gemini Models:", models);
+  return models;
+};
 
 export const testGeminiModels = async () => {
-  const testPrompt = "Generate a simple greeting message."
-  const systemPrompt = "You are a helpful assistant."
+  const testPrompt = "Generate a simple greeting message.";
+  const systemPrompt = "You are a helpful assistant.";
 
-  const result = await generateWithFallback(systemPrompt, testPrompt, 100)
+  const result = await generateWithFallback(systemPrompt, testPrompt, 100);
 
   if (result.success) {
-    console.log(`✅ Gemini models working - Used: ${result.modelUsed}`)
+    console.log(`✅ Gemini models working - Used: ${result.modelUsed}`);
     return {
       status: "success",
       modelUsed: result.modelUsed,
       response: result.text.substring(0, 100) + "...",
-    }
+    };
   } else {
-    console.log(`❌ All Gemini models failed: ${result.error}`)
+    console.log(`❌ All Gemini models failed: ${result.error}`);
     return {
       status: "failed",
       error: result.error,
-    }
+    };
   }
-}
+};

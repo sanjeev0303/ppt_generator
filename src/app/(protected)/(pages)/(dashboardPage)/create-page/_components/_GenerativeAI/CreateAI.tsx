@@ -114,7 +114,7 @@ const CreateAI = ({ onBack }: Props) => {
     setIsGenerating(true);
     if (outlines.length === 0) {
       toast.error("Error", {
-        description: "Please add at least on card to generate slides",
+        description: "Please add at least one card to generate slides",
       });
       return;
     }
@@ -125,7 +125,7 @@ const CreateAI = ({ onBack }: Props) => {
       );
 
       if (res.status !== 200 || !res.data) {
-        throw new Error("Unagle to create project")
+        throw new Error("Unable to create project")
       }
 
       router.push(`/presentation/${res.data.id}/select-theme`)
@@ -154,6 +154,19 @@ const CreateAI = ({ onBack }: Props) => {
         setIsGenerating(false)
     }
   };
+
+ const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      duration: 0.5,
+      stiffness: 100,
+    },
+  },
+};
 
   useEffect(() => {
     setNoOfCards(outlines.length);

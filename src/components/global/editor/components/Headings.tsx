@@ -23,7 +23,7 @@ const createHeading = (displayName: string, defaultClassName: string) => {
           };
           textarea?.addEventListener("input", adjustHeight);
           adjustHeight();
-          return () => textarea.removeEventListener('input', adjustHeight)
+          return () => textarea.removeEventListener('input', adjustHeight);
         }
       }, [isPreview]);
 

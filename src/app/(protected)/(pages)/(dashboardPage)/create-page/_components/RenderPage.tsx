@@ -29,11 +29,11 @@ const RenderPage = () => {
   const renderStep = () => {
     switch (page) {
       case "create":
-        return <CreatePage onSelectionOption={handleSelectOption} />;
+        return <CreatePage key="create-page" onSelectionOption={handleSelectOption} />;
       case "creative-ai":
-        return <CreateAI onBack={handleBack} />;
+        return <CreateAI key="creative-ai-page" onBack={handleBack} />;
       case "create-scratch":
-        return <ScratchPage onBack={handleBack} />;
+        return <ScratchPage key="scratch-page" onBack={handleBack} />;
       default:
         return null;
     }

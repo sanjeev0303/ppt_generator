@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { LayoutSlides } from "@/lib/type";
 import { cn } from "@/lib/utils";
@@ -41,13 +41,7 @@ const DropZone: React.FC<DropZoneProps> = ({
       type: string;
       layoutType: string;
       component: LayoutSlides;
-      index?: number;
-    }) => {
-      // Allow drop only if the item is a slide or layout and isEditable is true
-      return (
-        (item.type === "SLIDE" || item.layoutType === "layout") && isEditable
-      );
-    },
+    }) => (item.type === "SLIDE" || item.type === "layout") && isEditable,
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),

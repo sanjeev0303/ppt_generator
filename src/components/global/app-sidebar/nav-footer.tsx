@@ -40,6 +40,7 @@ const NavFooter = ({ prismaUser }: { prismaUser: User }) => {
                 className="w-full border-vivid bg-background-80 hover:bg-background-90 text-primary rounded-full font-bold"
                 variant={"default"}
                 size={"lg"}
+                onClick={() => router.push('/upgrade')}
               >
                 {loading ? "Upgrading..." : "Upgrade"}
               </Button>

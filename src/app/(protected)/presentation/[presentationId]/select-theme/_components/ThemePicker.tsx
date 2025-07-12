@@ -36,7 +36,7 @@ const ThemePicker = ({
       return;
     }
 
-    if (project?.id === "") {
+    if (!project?.id) {
       toast.error("Error", {
         description: "Please create a project",
       });
@@ -102,9 +102,9 @@ const ThemePicker = ({
           onClick={handleGenerateLayouts}
         >
           {loading ? (
-            <Loader2 className="mr-2 h-2 w-2 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Wand2 className="mr-2 h-2 w-2" />
+            <Wand2 className="mr-2 h-4 w-4" />
           )}
           {loading ? (
             <p className="animate-pulse">Generating...</p>
@@ -128,7 +128,7 @@ const ThemePicker = ({
                 style={{
                   fontFamily: theme.fontFamily,
                   color: theme.fontColor,
-                  background: theme.gradientBackgrond || theme.backgroundColor,
+                  background: theme.gradientBackground || theme.backgroundColor,
                 }}
               >
                 <div className="w-full flex items-center justify-between">

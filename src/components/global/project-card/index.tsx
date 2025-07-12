@@ -1,18 +1,16 @@
 "use client";
 
-import { JsonValue } from "@prisma/client/runtime/library";
-import React, { useState } from "react";
-import { motion } from "motion/react";
-import { itemVariants, themes } from "@/lib/constants";
-import { useSlideStore } from "@/store/useSlideStore";
-import { useRouter } from "next/navigation";
-import ThumnailPreview from "./thumnail-preview";
-import { timeAgo } from "@/lib/utils";
-import { AlertDialog } from "@/components/ui/alert-dialog";
-import AlertDialogBox from "../alert-dialog-box";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { deleteProject, recoverProject } from "@/actions/project";
+import { Button } from "@/components/ui/button";
+import { themes } from "@/lib/constants";
+import { timeAgo } from "@/lib/utils";
+import { useSlideStore } from "@/store/useSlideStore";
+import { JsonValue } from "@prisma/client/runtime/library";
+import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import AlertDialogBox from "../alert-dialog-box";
 
 type Props = {
   projectId: string;
@@ -74,6 +72,7 @@ const ProjectCard = ({
         toast.error("Failed to recover project", {
             description: "Please try again.",
         });
+        setLoading(false);
     }
   };
 
@@ -105,12 +104,26 @@ const ProjectCard = ({
         })
 
     } catch (error) {
-        console.error("�� Error", error);
+        console.error("Error deleting project:", error);
         toast.error("Failed to delete project", {
             description: "Please try again.",
         });
+        setLoading(false)
     }
   }
+
+const  itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      duration: 0.3,
+      stiffness: 100,
+    },
+  },
+};
 
   return (
     <motion.div

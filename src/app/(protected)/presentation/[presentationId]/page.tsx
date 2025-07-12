@@ -31,7 +31,7 @@ const PresentationId = () => {
                 toast.error("Error", {
                     description: "Unable to fetch project"
                 })
-                redirect("/dashbaord")
+                redirect("/dashboard")
             }
 
             const findTheme = themes.find((theme) => theme.name === res.data.themeName)
@@ -50,7 +50,7 @@ const PresentationId = () => {
             setIsLoading(false)
         }
     })()
-  }, []);
+  }, [params.PresentationId, setTheme, setSlides, setProject]);
 
   if (isLoading) {
     return(

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Theme } from "@/lib/type";
-import { AnimationControls, motion } from "motion/react";
+import {  motion, useAnimation } from "framer-motion";
 import Image from "next/image";
 import React from "react";
 
@@ -10,7 +10,7 @@ type ThemeCardProps = {
   content: React.ReactNode;
   variant: "left" | "main" | "right";
   theme: Theme;
-  controls: AnimationControls;
+  controls: ReturnType<typeof useAnimation>;
 };
 
 const ThemeCard = ({
@@ -31,7 +31,7 @@ const ThemeCard = ({
         scale: 0.95,
         rotate: -10,
         transition: {
-          tyep: "spring",
+          type: "spring" as const,
           stiffness: 300,
           damping: 30,
           delay: 0.1,
@@ -47,7 +47,7 @@ const ThemeCard = ({
         scale: 0.95,
         rotate: 10,
         transition: {
-          tyep: "spring",
+          type: "spring" as const,
           stiffness: 300,
           damping: 30,
           delay: 0.1,
@@ -60,7 +60,7 @@ const ThemeCard = ({
         opacity: 1,
         scale: 1,
         transition: {
-          tyep: "spring",
+          type: "spring" as const,
           stiffness: 300,
           damping: 30,
           delay: 0.2,

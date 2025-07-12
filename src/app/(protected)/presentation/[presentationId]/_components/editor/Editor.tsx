@@ -31,7 +31,7 @@ const Editor = ({ isEditable }: Props) => {
   console.log("📋 Ordered slides count:", orderedSlides?.length || 0);
 
   const slideRefs = React.useRef<(HTMLDivElement | null)[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const moveSlide = (dragIndex: number, hoverIndex: number) => {
     console.log(`🔄 Moving slide from ${dragIndex} to ${hoverIndex}`);
@@ -120,10 +120,11 @@ const Editor = ({ isEditable }: Props) => {
   }, [slides, orderedSlides, project]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        setLoading(false)
-    }
-  }, [])
+   // Set loading to false once slides are available
+   if (slides && slides.length >= 0) {
+     setLoading(false);
+   }
+ }, [slides]);
 
 
   return (
@@ -147,6 +148,7 @@ const Editor = ({ isEditable }: Props) => {
                   index={index}
                   moveSlide={moveSlide}
                   handleDelete={handleDelete}
+                  isEditable={isEditable}
                 />
               </React.Fragment>
             ))}

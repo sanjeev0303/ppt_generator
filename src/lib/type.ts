@@ -51,7 +51,7 @@ export interface ContentItem {
     placeholder?: string
     className?: string
     alt?: string
-    callOutTyps?: "success" | "warning" | "info" | "question" | "caution"
+    callOutTypes?: "success" | "warning" | "info" | "question" | "caution"
     link?: string
     code?: string
     language?: string
@@ -67,7 +67,7 @@ export interface Theme {
     backgroundColor?: string;
     slideBackgroundColor?: string;
     accentColor?: string;
-    gradientBackgrond?: string;
+    gradientBackground?: string;
     sidebarColor?: string;
     navbarColor?: string;
     type: 'light' | 'dark';

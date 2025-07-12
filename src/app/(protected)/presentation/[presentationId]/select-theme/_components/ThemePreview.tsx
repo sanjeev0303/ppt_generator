@@ -21,9 +21,9 @@ const ThemePreview = () => {
 
   useEffect(() => {
     if (project?.slides) {
-      redirect(`presentation/${params.presentationId}`);
+      router.replace(`/presentation/${params.presentationId}`);
     }
-  }, [project]);
+  }, [project, params.presentationId, router]);
 
   useEffect(() => {
     controls.start("visible");
@@ -33,7 +33,7 @@ const ThemePreview = () => {
     <div className="space-y-4">
       <div
         className="rounded-xl p-6"
-        style={{ backgroundColor: selectedTheme.accentColor + "10" }}
+         style={{ backgroundColor: `color-mix(in srgb, ${selectedTheme.accentColor} 10%, transparent)` }}
       >
         <h3
           className="text-xl font-semibold mb-4"
