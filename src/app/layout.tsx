@@ -27,11 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-    appearance={{
-        baseTheme: dark,
-      }}
-    >
+    // Temporarily disabled ClerkProvider to test enhanced editor
+    // <ClerkProvider
+    // appearance={{
+    //     baseTheme: dark,
+    //   }}
+    // >
     <html lang="en" suppressHydrationWarning>
       <body
         className={`antialiased`}
@@ -47,6 +48,6 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-    </ClerkProvider>
+    // </ClerkProvider>
   );
 }
