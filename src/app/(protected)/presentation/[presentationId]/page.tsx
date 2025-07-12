@@ -50,7 +50,7 @@ const PresentationId = () => {
             setIsLoading(false)
         }
     })()
-  }, [params.PresentationId, setTheme, setSlides, setProject]);
+  }, []);
 
   if (isLoading) {
     return(

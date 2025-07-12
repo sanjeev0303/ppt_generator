@@ -1,7 +1,9 @@
 "use client"
+
 import type { OutlineCard } from "@/lib/type"
-import { motion, AnimatePresence } from "motion/react"
-import React, { useEffect, useRef, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import type React from "react"
+import { useEffect, useRef, useState, useId, useCallback } from "react"
 import Card from "./Card"
 import AddCardButton from "./AddCardButton"
 
@@ -39,14 +41,19 @@ const CardList = ({
   const [isDragging, setIsDragging] = useState(false)
   const dragOffsetY = useRef<number>(0)
   const dragImageRef = useRef<HTMLElement | null>(null)
+  const listId = useId() // Unique ID for this list instance
 
-   // Add cleanup effect
+  // Add cleanup effect
   useEffect(() => {
     return () => {
       if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
         document.body.removeChild(dragImageRef.current)
       }
     }
+  }, [])
+
+  const generateUniqueId = useCallback(() => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${crypto.randomUUID()}`
   }, [])
 
   const onDragOver = (e: React.DragEvent, index: number) => {
@@ -60,44 +67,42 @@ const CardList = ({
     const y = e.clientY - rect.top
     const threshold = rect.height / 2
 
-    // Improved drag-over calculation
     const newDragOverIndex = y < threshold ? index : index + 1
 
-    // Only update if the index actually changed
     if (newDragOverIndex !== dragOverIndex) {
       setDragOverIndex(newDragOverIndex)
     }
   }
 
-  const onAddCard = (index?: number) => {
-    // Generate a truly unique ID using timestamp + random string
-    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const onAddCard = useCallback(
+    (index?: number) => {
+      const uniqueId = generateUniqueId()
 
-    const newCard: OutlineCard = {
-      id: uniqueId,
-      title: editText || "New Card",
-      order: 0, // Will be set correctly below
-    }
+      const newCard: OutlineCard = {
+        id: uniqueId,
+        title: editText || "New Card",
+        order: 0,
+      }
 
-    let updatedCards: OutlineCard[]
+      let updatedCards: OutlineCard[]
 
-    if (index !== undefined) {
-      // Insert after the specified index
-      updatedCards = [...outlines.slice(0, index + 1), newCard, ...outlines.slice(index + 1)]
-    } else {
-      // Add to the end
-      updatedCards = [...outlines, newCard]
-    }
+      if (index !== undefined) {
+        updatedCards = [...outlines.slice(0, index + 1), newCard, ...outlines.slice(index + 1)]
+      } else {
+        updatedCards = [...outlines, newCard]
+      }
 
-    // Update order property for all cards - this is the key fix
-    const reorderedCards = updatedCards.map((card, idx) => ({
-      ...card,
-      order: idx + 1,
-    }))
+      // Update order property for all cards
+      const reorderedCards = updatedCards.map((card, idx) => ({
+        ...card,
+        order: idx + 1,
+      }))
 
-    addMultipleOutlines(reorderedCards)
-    setEditText("")
-  }
+      addMultipleOutlines(reorderedCards)
+      setEditText("")
+    },
+    [outlines, editText, addMultipleOutlines, setEditText, generateUniqueId],
+  )
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -114,7 +119,6 @@ const CardList = ({
       return
     }
 
-    // Don't do anything if dropping in the same position
     if (dragOverIndex === draggedIndex || dragOverIndex === draggedIndex + 1) {
       resetDragState()
       return
@@ -123,18 +127,14 @@ const CardList = ({
     const updatedCards = [...outlines]
     const [removedCard] = updatedCards.splice(draggedIndex, 1)
 
-    // Calculate the correct insertion index
     let insertIndex = dragOverIndex
     if (dragOverIndex > draggedIndex) {
       insertIndex = dragOverIndex - 1
     }
 
-    // Ensure insertIndex is within bounds
     insertIndex = Math.max(0, Math.min(insertIndex, updatedCards.length))
-
     updatedCards.splice(insertIndex, 0, removedCard)
 
-    // Update order property for all cards - critical for proper indexing
     const reorderedCards = updatedCards.map((card, index) => ({
       ...card,
       order: index + 1,
@@ -150,39 +150,37 @@ const CardList = ({
     setIsDragging(false)
   }
 
-  const onCardUpdate = (id: string, newTitle: string) => {
-    const updatedCards = outlines.map((card) => (card.id === id ? { ...card, title: newTitle } : card))
-
-    addMultipleOutlines(updatedCards)
-
-    setEditingCard(null)
-    setSelectedCard(null)
-    setEditText("")
-  }
-
-  const onCardDelete = (id: string) => {
-    // Create a new array without the deleted card
-    const filteredCards = outlines.filter((card) => card.id !== id)
-
-    // Update order property for remaining cards - this ensures proper indexing after deletion
-    const reorderedCards = filteredCards.map((card, index) => ({
-      ...card,
-      order: index + 1,
-    }))
-
-    // Important: Replace the entire array in state, not append to it
-    addMultipleOutlines([...reorderedCards])
-
-    // Clear any editing state if the deleted card was being edited
-    if (editingCard === id) {
+  const onCardUpdate = useCallback(
+    (id: string, newTitle: string) => {
+      const updatedCards = outlines.map((card) => (card.id === id ? { ...card, title: newTitle } : card))
+      addMultipleOutlines(updatedCards)
       setEditingCard(null)
-      setEditText("")
-    }
-    if (selectedCard === id) {
       setSelectedCard(null)
-    }
-  }
+      setEditText("")
+    },
+    [outlines, addMultipleOutlines, setEditingCard, setSelectedCard, setEditText],
+  )
 
+  const onCardDelete = useCallback(
+    (id: string) => {
+      const filteredCards = outlines.filter((card) => card.id !== id)
+      const reorderedCards = filteredCards.map((card, index) => ({
+        ...card,
+        order: index + 1,
+      }))
+
+      addMultipleOutlines([...reorderedCards])
+
+      if (editingCard === id) {
+        setEditingCard(null)
+        setEditText("")
+      }
+      if (selectedCard === id) {
+        setSelectedCard(null)
+      }
+    },
+    [outlines, addMultipleOutlines, editingCard, selectedCard, setEditingCard, setEditText, setSelectedCard],
+  )
 
   const onDragStart = (e: React.DragEvent, card: OutlineCard) => {
     setDraggedItem(card)
@@ -192,12 +190,10 @@ const CardList = ({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     dragOffsetY.current = e.clientY - rect.top
 
-    // Clean up any existing drag image
     if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
       document.body.removeChild(dragImageRef.current)
     }
 
-    // Create drag image
     const draggedEl = e.currentTarget.cloneNode(true) as HTMLElement
     draggedEl.style.position = "absolute"
     draggedEl.style.top = "-1000px"
@@ -209,7 +205,7 @@ const CardList = ({
     e.dataTransfer.setDragImage(draggedEl, 0, dragOffsetY.current)
 
     setTimeout(() => {
-       if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
+      if (dragImageRef.current && document.body.contains(dragImageRef.current)) {
         document.body.removeChild(dragImageRef.current)
         dragImageRef.current = null
       }
@@ -227,7 +223,6 @@ const CardList = ({
 
     const draggedIndex = outlines.findIndex((card) => card.id === draggedItem.id)
 
-    // Don't show drop indicator on the dragged item itself
     if (cardIndex === draggedIndex) {
       return { opacity: 0.5 }
     }
@@ -262,6 +257,7 @@ const CardList = ({
 
   return (
     <motion.div
+      key={`card-list-${listId}`}
       className="space-y-2 -my-2"
       layout
       onDragOver={(e) => {
@@ -272,11 +268,18 @@ const CardList = ({
       }}
       onDrop={onDrop}
     >
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {outlines.map((card, index) => (
-          <div key={`card-container-${card.id}-${index}`}>
+          <motion.div
+            key={`card-wrapper-${card.id}-${index}`} // Ensure unique wrapper key
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+          >
             <Card
-              key={`card-${card.id}`}
+              key={`card-${card.id}`} // Unique card key
               onDragOver={(e) => onDragOver(e, index)}
               card={card}
               isEditing={editingCard === card.id}
@@ -303,25 +306,19 @@ const CardList = ({
               dragOverStyles={getDragOverStyle(index)}
             />
 
-            {/* Only show AddCardButton when not dragging to avoid interference */}
             {!isDragging && (
               <AddCardButton
-                key={`add-button-${index}`}
+                key={`add-button-${card.id}-${index}`} // Unique add button key
                 onAddCard={() => onAddCard(index)}
               />
             )}
-          </div>
+          </motion.div>
         ))}
       </AnimatePresence>
 
-      {/* Drop zone at the end */}
-      <div key="drop-zone-end" style={getDropZoneStyle()}>
-        {/* Add card button at the end - always visible when not dragging */}
+      <div key={`drop-zone-end-${listId}`} style={getDropZoneStyle()}>
         {!isDragging && (
-          <AddCardButton
-            key="add-button-end"
-            onAddCard={() => onAddCard()}
-          />
+          <AddCardButton key={`add-button-end-${listId}`} onAddCard={() => onAddCard()} />
         )}
       </div>
     </motion.div>

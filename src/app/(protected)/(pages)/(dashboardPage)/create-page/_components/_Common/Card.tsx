@@ -2,8 +2,8 @@
 
 import type { OutlineCard } from "@/lib/type"
 import type React from "react"
-import { useRef, useEffect } from "react"
-import { motion } from "motion/react"
+import { useRef, useEffect, useId } from "react"
+import { motion } from "framer-motion"
 import { Card as UICard } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -44,8 +44,8 @@ const Card = ({
   dragOverStyles,
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null)
+  const cardId = useId() // Generate unique ID for this card instance
 
-  // Auto-focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
@@ -55,6 +55,7 @@ const Card = ({
 
   return (
     <motion.div
+      key={`card-motion-${card.id}-${cardId}`} // Ensure unique motion key
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -62,12 +63,7 @@ const Card = ({
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 1 }}
       className="relative"
     >
-      <div
-        draggable={!isEditing} // Prevent dragging while editing
-        style={dragOverStyles}
-        onDragOver={onDragOver}
-        {...draagHandlers}
-      >
+      <div draggable={!isEditing} style={dragOverStyles} onDragOver={onDragOver} {...draagHandlers}>
         <UICard
           className={`p-4 cursor-grab active:cursor-grabbing bg-primary-90 transition-all duration-200 ${
             isEditing || isSelected ? "border-primary bg-transparent ring-2 ring-primary/20" : ""
@@ -77,12 +73,10 @@ const Card = ({
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1">
-              {/* Drag handle */}
               <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
                 <GripVertical className="h-4 w-4" />
               </div>
 
-              {/* Card order badge */}
               <span
                 className={`text-sm font-medium px-2 py-1 rounded-md bg-primary/10 text-primary min-w-[2rem] text-center ${
                   isEditing || isSelected ? "bg-primary text-primary-foreground" : ""
@@ -91,10 +85,10 @@ const Card = ({
                 {card.order}
               </span>
 
-              {/* Card content */}
               <div className="flex-1">
                 {isEditing ? (
                   <Input
+                    key={`input-${card.id}-${cardId}`} // Unique input key
                     ref={inputRef}
                     value={editText}
                     onChange={(e) => onEditChange(e.target.value)}
@@ -109,7 +103,6 @@ const Card = ({
               </div>
             </div>
 
-            {/* Delete button */}
             <Button
               variant="ghost"
               size="icon"

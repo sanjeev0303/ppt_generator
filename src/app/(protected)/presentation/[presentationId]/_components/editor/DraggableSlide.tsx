@@ -70,7 +70,7 @@ const DraggableSlide: React.FC<DraggableSlideProps> = ({
         isDragging ? "opacity-50" : "opacity-100"
       )}
       style={{
-        backgroundImage: currentTheme.gradientBackgrond,
+        backgroundImage: currentTheme.gradientBackground,
       }}
       onClick={() => {
         if (setCurrentSlide) {

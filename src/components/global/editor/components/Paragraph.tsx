@@ -1,57 +1,67 @@
-import { cn } from "@/lib/utils";
-import React, { useEffect, useRef } from "react";
+"use client"
 
-interface ParagraphProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  className?: string;
-  style?: React.CSSProperties;
-  isPreview?: boolean;
+import { cn } from "@/lib/utils"
+import React, { useEffect, useRef, useCallback } from "react"
+
+interface ParagraphProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  className?: string
+  style?: React.CSSProperties
+  isPreview?: boolean
 }
 
 const Paragraph = React.forwardRef<HTMLTextAreaElement, ParagraphProps>(
   ({ className, style, isPreview = false, ...props }, ref) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    useEffect(() => {
-      const textarea = textareaRef.current;
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    const adjustHeight = useCallback(() => {
+      const textarea = textareaRef.current
       if (textarea && !isPreview) {
-        const adjustHeight = () => {
-          textarea.style.height = "0";
-          textarea.style.height = `${textarea.scrollHeight}px`;
-        };
-        textarea.addEventListener("input", adjustHeight);
-        adjustHeight();
-        return () => textarea.removeEventListener("input", adjustHeight);
+        textarea.style.height = "auto"
+        textarea.style.height = `${Math.max(textarea.scrollHeight, 60)}px`
       }
-    }, [isPreview]);
+    }, [isPreview])
+
+    useEffect(() => {
+      const textarea = textareaRef.current
+      if (textarea && !isPreview) {
+        textarea.addEventListener("input", adjustHeight)
+        adjustHeight()
+        return () => textarea.removeEventListener("input", adjustHeight)
+      }
+    }, [isPreview, adjustHeight])
 
     return (
       <textarea
         className={cn(
-          "w-full bg-transparent font-normal text-gray-900 placeholder:text-gray-300 focus:outline-none resize-none overflow-hidden leading-tight",
-          `${isPreview ? "text-[0.5rem]" : "text-lg"}`,
-          className
+          "w-full bg-transparent font-normal text-gray-800 dark:text-gray-200",
+          "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+          "focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-transparent",
+          "resize-none overflow-hidden leading-relaxed transition-colors duration-200",
+          "border-none p-0 m-0",
+          isPreview ? "text-xs leading-tight" : "text-base leading-relaxed",
+          className,
         )}
         style={{
-            padding: 0,
-            margin: 0,
-            color: 'inherit',
-            boxSizing: "content-box",
-            lineHeight: '1.5rem',
-            minHeight: "1.5rem",
-            ...style,
+          color: "inherit",
+          boxSizing: "content-box",
+          minHeight: isPreview ? "auto" : "60px",
+          lineHeight: isPreview ? "1.3" : "1.6",
+          ...style,
         }}
         ref={(el) => {
-            (textareaRef.current as HTMLTextAreaElement | null) = el
-
-            if (typeof ref === "function") return ref(el)
-                else if (ref) ref.current = el
+          textareaRef.current = el
+          if (typeof ref === "function") ref(el)
+          else if (ref) ref.current = el
         }}
         readOnly={isPreview}
+        role="textbox"
+        aria-multiline="true"
+        spellCheck="true"
         {...props}
       />
-    );
-  }
-);
+    )
+  },
+)
 
-Paragraph.displayName = 'Paragraph'
-export default Paragraph;
+Paragraph.displayName = "Paragraph"
+export default Paragraph

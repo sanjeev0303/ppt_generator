@@ -1,19 +1,22 @@
 "use client"
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "motion/react"
+import { useState, useId } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
 type Props = {
   onAddCard: () => void
+  index?: number // Add index to make each button unique
 }
 
-const AddCardButton = ({ onAddCard }: Props) => {
+const AddCardButton = ({ onAddCard, index }: Props) => {
   const [showGap, setShowGap] = useState(false)
+  const uniqueId = useId() // Generate unique ID for this component instance
 
   return (
     <motion.div
+      key={`add-card-button-${index}-${uniqueId}`} // Ensure unique key
       className="w-full relative overflow-hidden"
       initial={{ height: "0.5rem" }}
       animate={{
@@ -26,6 +29,7 @@ const AddCardButton = ({ onAddCard }: Props) => {
       <AnimatePresence>
         {showGap && (
           <motion.div
+            key={`gap-${index}-${uniqueId}`}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
